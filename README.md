@@ -113,7 +113,7 @@ The repository contains key server PHP code, so that organizations can run a [Na
 
 ## Important!
 
-The key server is designed for privacy and therefore there is no mechanism via email to change your Password! So, write this Password also down and store it on paper and put it in a safe place.
+The key server is designed for privacy and therefore there is no mechanism via email to change your password! So, write this password also down and store it on paper and put it in a safe place.
 
 If you like Nbox consider a small donation in crypto currencies or buy me a coffee.
 
