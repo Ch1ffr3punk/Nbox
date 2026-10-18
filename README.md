@@ -1,9 +1,9 @@
-# NaClbox
+# Nbox
 
 A minimal, modern, cross-platform tool for encrypted 1:1 messaging based on
 NaCl (Networking and Cryptography library) primitives by [DJB](https://en.wikipedia.org/wiki/Daniel_J._Bernstein).
 
-NaClbox is designed for users who want strong, misuse-resistant cryptography without the complexity and legacy baggage of OpenPGP. It focuses on a clean workflow: create an identity, exchange public keys, encrypt a message, share the Base64 ciphertext through any channel, and decrypt it on the other side.
+Nbox is designed for users who want strong, misuse-resistant cryptography without the complexity and legacy baggage of OpenPGP. It focuses on a clean workflow: create an identity, exchange public keys, encrypt a message, share the Base64 ciphertext through any channel, and decrypt it on the other side.
 
 ## Features
 
@@ -21,7 +21,7 @@ NaClbox is designed for users who want strong, misuse-resistant cryptography wit
 - **Base64 output** with exactly 76 characters per line  
 - **Cross-platform** via the Fyne Storage API (Linux, macOS, Windows, Android, iOS)  
 - **Portable mode on Windows** (vault next to the executable)  
-- **NIST SP 800-63B compliant** passphrases (minimum 15 characters)  
+- **NIST SP 800-63B compliant** password (minimum 15 characters)  
 - **Horizontal and vertical scrollbars** in the text area  
 
 ## Screenshot
@@ -31,7 +31,7 @@ NaClbox is designed for users who want strong, misuse-resistant cryptography wit
 ## Usage
 
 1. Create your identity
-Click Init, enter a name (e.g. self), and confirm. NaClbox generates a Curve25519 key pair and stores it inside the encrypted vault. A modal window displays your public key in PEM format — share it with your peers.
+Click Init, enter a name (e.g. self), and confirm. Nbox generates a Curve25519 key pair and stores it inside the encrypted vault. A modal window displays your public key in PEM format — share it with your peers.
 
 You can copy the public key to the clipboard with one click. The clipboard is wiped automatically after 15 seconds.
 
@@ -39,25 +39,25 @@ You can copy the public key to the clipboard with one click. The clipboard is wi
 Click Add, load the peer's public key PEM file, and give the peer a name. The public key is stored inside the vault.
 
 3. Encrypt a message
-Type your message into the text area and click Encrypt. Choose your identity and the recipient. NaClbox encrypts the message and replaces the content with Base64-wrapped ciphertext (76 characters per line).
+Type your message into the text area and click Encrypt. Choose your identity and the recipient. Nbox encrypts the message and replaces the content with Base64-wrapped ciphertext (76 characters per line).
 
 Copy the ciphertext and send it to your peer through any channel.
 
 Optional: click Pad before encrypting to pad the plaintext to the next 4096-byte boundary. This hides the message length.
 
 4. Decrypt a message
-Paste the ciphertext into the text area and click Decrypt. NaClbox tries every combination of your identities and known peers until it finds the matching key pair, then replaces the content with the plaintext.
+Paste the ciphertext into the text area and click Decrypt. Nbox tries every combination of your identities and known peers until it finds the matching key pair, then replaces the content with the plaintext.
 
 If the plaintext was padded, click Unpad to strip the padding.
 
 ## Security design
 
 Threat model
-NaClbox assumes the following:
+Nbox assumes the following:
 
 The attacker may have access to the encrypted vault file (vault.enc)  
 
-The attacker may have access to the Base64 ciphertext exchanged between Peers  
+The attacker may have access to the Base64 ciphertext exchanged between peers  
 
 The attacker does not have live access to the process memory while the vault is unlocked  
 
@@ -72,10 +72,10 @@ The plaintext inside the secretbox is a packed map of all keys:
 for each entry:  
   uint32_le(len(name)) || name  
   uint32_le(len(content)) || content  
-Argon2id derives a 32-byte key from the user's passphrase and the random salt. NaCl secretbox encrypts the entire packed map with that key.
+Argon2id derives a 32-byte key from the user's password and the random salt. NaCl secretbox encrypts the entire packed map with that key.
 
-Memory handling
-Passphrases are held in memguard.LockedBuffer and destroyed after use  
+Memory handling  
+Passwords are held in memguard.LockedBuffer and destroyed after use  
 
 The Argon2id-derived key is wrapped in memguard during encryption/decryption  
 
@@ -86,21 +86,21 @@ The in-memory vault map lives in the Go heap (not memguard) — this is a delibe
 memguard.Purge() is called on shutdown
 
 Auto-lock
-After 5 minutes of inactivity (configurable via autoLockDuration), the vault is locked: the passphrase buffer is destroyed, the in-memory entries are overwritten and cleared, and the text area and clipboard are wiped. The next operation prompts for the passphrase again.
+After 5 minutes of inactivity (configurable via autoLockDuration), the vault is locked: the password buffer is destroyed, the in-memory entries are overwritten and cleared, and the text area and clipboard are wiped. The next operation prompts for the password again.
 
 Secure clipboard
 Text copied via the Copy to Clipboard button is wiped from the clipboard after 15 seconds — but only if the clipboard still holds the exact text we put there. This avoids clobbering user-copied data.
 
 Rate limiting
-Decryption attempts are limited to 5 per minute. This slows down brute-force attacks against the NaCl box authentication tag.
+Decryption attempts are limited to 5 per minute. This slows down brute-force attacks against the Nbox authentication tag.
 
 File locations
 Platform	Vault path
 Linux	~/.local/share/oc2mx.net.naclbox/vault.enc  
-macOS	~/Library/Application Support/oc2mx.net.naclbox/vault.enc  
+macOS	~/Library/Application Support/oc2mx.net.nbox/vault.enc  
 Windows (standard)	%APPDATA%\oc2mx.net.naclbox\vault.enc  
 Windows (portable)	<exe-dir>\.Nbox\vault.enc  
-Android	App sandbox under oc2mx.net.naclbox  
+Android	App sandbox under oc2mx.net.nbox  
 iOS	App sandbox under the bundle identifier  
 
 ## Important!
