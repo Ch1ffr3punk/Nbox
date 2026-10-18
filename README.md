@@ -111,7 +111,7 @@ Once you have created your identity key pair, please do a back-up of your key pa
 
 The repository contains key server PHP code, so that organizations can run a NaClbox key server for their employees.
 
-## Important
+## Important!
 
 The key server is designed for privacy and therefore there is no mechanism via email to change your Password! So, write this Password also down and store it on paper and put it in a safe place.
 
