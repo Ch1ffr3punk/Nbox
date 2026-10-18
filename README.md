@@ -50,7 +50,7 @@ Paste the ciphertext into the text area and click Decrypt. NaClbox tries every c
 
 If the plaintext was padded, click Unpad to strip the padding.
 
-##Security design
+## Security design
 
 Threat model
 NaClbox assumes the following:
