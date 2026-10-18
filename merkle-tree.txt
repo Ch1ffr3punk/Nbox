@@ -1,0 +1,16 @@
+--- FILE HASHES (RIPEMD-160) ---
+LICENSE: 304c26c26e8af4d60f1e0818baa73f8ac9b511fd
+LabGrotesque-Bold.ttf: b99c6670abf08cbcb148216c6ba0ad291c1fda1a
+README.md: 80e13d7e6e065abbffa9398b3a4d7abcea93b0e4
+bundle_font.go: 34439dd7ea34d8ae8f157cec11ab630e9dc70a68
+go.mod: aa9b45adedb5816fbcde2f5b20c21f88f5ed0a8b
+go.sum: fdf0f9f68fecaa1aa217a1a5a242ed6805083d7f
+img\1.png: 56ad4d752e744dd4c15ce93d90cb47b2ffc0bcc4
+keyserver\README.txt: d6c5f03c0b7b1d0ac735599b4346550a3d5dc26c
+keyserver\keyserver.php: 639c05396027780b2f87ca3c1db18e7228395c97
+keyserver\nbox.ico: 8af976cb0295650a648d52cec6de8ed20269d235
+nbox.go: e6cd7d18be58ad4a24c26bc12c50fb546d2ee049
+nbox.png: 0e723db45efbc2e4dd41fc3479b443b75f46972e
+
+--- ROOT HASH (RIPEMD-160) ---
+85f9897facb9516d361bb5a8cf741c02577bb211
