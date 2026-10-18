@@ -109,7 +109,7 @@ Once you have created your identity key pair, please do a back-up of your key pa
 
 ## Public NaClbox Key Server
 
-The repository contains key server PHP code, so that organizations can run a NaClbox key server for their employees.
+The repository contains key server PHP code, so that organizations can run a [NaClbox key server](https://keys.oc2mx.net) for their employees.
 
 ## Important!
 
