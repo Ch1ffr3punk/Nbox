@@ -86,19 +86,19 @@ The in-memory vault map lives in the Go heap (not memguard) — this is a delibe
 memguard.Purge() is called on shutdown
 
 Auto-lock
-After 5 minutes of inactivity (configurable via autoLockDuration), the vault is locked: the password buffer is destroyed, the in-memory entries are overwritten and cleared, and the text area and clipboard are wiped. The next operation prompts for the password again.
+After 15 minutes of inactivity (configurable via autoLockDuration), the vault is locked: the password buffer is destroyed, the in-memory entries are overwritten and cleared, and the text area and clipboard are wiped. The next operation prompts for the password again.
 
 Secure clipboard
-Text copied via the Copy to Clipboard button is wiped from the clipboard after 15 seconds — but only if the clipboard still holds the exact text we put there. This avoids clobbering user-copied data.
+Text copied via the Copy to Clipboard button is wiped from the clipboard after 45 seconds — but only if the clipboard still holds the exact text we put there. This avoids clobbering user-copied data.
 
 Rate limiting
 Decryption attempts are limited to 5 per minute. This slows down brute-force attacks against the Nbox authentication tag.
 
 File locations
 Platform	Vault path
-Linux	~/.local/share/oc2mx.net.naclbox/vault.enc  
+Linux	~/.local/share/oc2mx.net.nbox/vault.enc  
 macOS	~/Library/Application Support/oc2mx.net.nbox/vault.enc  
-Windows (standard)	%APPDATA%\oc2mx.net.naclbox\vault.enc  
+Windows (standard)	%APPDATA%\oc2mx.net.nbox\vault.enc  
 Windows (portable)	<exe-dir>\.Nbox\vault.enc  
 Android	App sandbox under oc2mx.net.nbox  
 iOS	App sandbox under the bundle identifier  
@@ -119,7 +119,8 @@ If you like Nbox consider a small donation in crypto currencies or buy me a coff
 
 ```
 BTC: bc1qm0e7r94ht60tu7zuewf0ftl3td0xc700rvcagn
-Nym: n1f0r6zzu5hgh4rprk2v2gqcyr0f5fr84zv69d3x          
+Nym: n1f0r6zzu5hgh4rprk2v2gqcyr0f5fr84zv69d3x 
+XMR: 463S84EDEXRErxkJ1doFikKEbLr1gGNucXGtcMe6pNfYc6eArCdWUtLMVBakB3qjmCjNKqkBeFmZPBGgYwByPFzw3GxNdzi          
 ```
 <a href="https://www.buymeacoffee.com/Ch1ffr3punk" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-yellow.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 

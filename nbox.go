@@ -4,12 +4,10 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
-	"encoding/hex"
 	"encoding/pem"
 	"errors"
 	"fmt"
 	"image/color"
-	"io"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -64,7 +62,7 @@ const (
 	// It prevents unattended access but doesn't interrupt normal thinking/typing breaks.
 	autoLockDuration = 15 * time.Minute
 
-	// clipboardClearDelay: 45 seconds gives the user enough time to switch 
+	// clipboardClearDelay: 45 seconds gives the user enough time to switch
 	// windows and paste the text into a potentially slow email client or messenger,
 	// while still protecting against casual clipboard snooping.
 	clipboardClearDelay = 45 * time.Second
@@ -943,7 +941,7 @@ func (a *NboxApp) showInfoPopup() {
 	})
 	okButton.Importance = widget.HighImportance
 	content := container.NewVBox(
-		widget.NewLabelWithStyle("Nbox v0.1.0", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle("Nbox v0.1.1", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		widget.NewSeparator(),
 		container.NewHBox(layout.NewSpacer(), projectLink, layout.NewSpacer()),
 		widget.NewLabelWithStyle("released under the Apache 2.0 license", fyne.TextAlignCenter, fyne.TextStyle{}),
@@ -1042,52 +1040,29 @@ func (a *NboxApp) cmdAdd() {
 	a.ensureVaultUnlocked(func() {
 		nameEntry := widget.NewEntry()
 		nameEntry.SetPlaceHolder("peer name")
-		loadKeyBtn := widget.NewButton("Load Public Key (.pem)", func() {
-			dialog.ShowFileOpen(func(reader fyne.URIReadCloser, err error) {
-				if reader == nil {
-					return
-				}
-				defer reader.Close()
-				data, err := io.ReadAll(reader)
-				if err != nil {
-					dialog.ShowError(err, a.window)
-					return
-				}
-				block, _ := pem.Decode(data)
-				if block == nil {
-					dialog.ShowError(fmt.Errorf("no PEM block found in file"), a.window)
-					return
-				}
-				if block.Type != "NaClbox PUBLIC KEY" {
-					dialog.ShowError(fmt.Errorf("unexpected PEM block type: %q", block.Type), a.window)
-					return
-				}
-				if len(block.Bytes) != 32 {
-					dialog.ShowError(fmt.Errorf("invalid public key length: %d", len(block.Bytes)), a.window)
-					return
-				}
-				var key [32]byte
-				copy(key[:], block.Bytes)
-				a.scannedPubKey = hex.EncodeToString(key[:])
-				if nameEntry.Text == "" {
-					base := filepath.Base(reader.URI().Path())
-					base = strings.TrimSuffix(base, ".pub.pem")
-					base = strings.TrimSuffix(base, ".pem")
-					if base != "" {
-						nameEntry.SetText(base)
-					} else {
-						nameEntry.SetText("peer_" + a.scannedPubKey[:8])
-					}
-				}
-				a.touchActivity()
-				a.statusLabel.SetText("Public key loaded")
-				dialog.ShowInformation("Success", "Public key loaded.", a.window)
-			}, a.window)
+		pemEntry := widget.NewMultiLineEntry()
+		pemEntry.SetPlaceHolder("-----BEGIN NaClbox PUBLIC KEY-----\n...\n-----END NaClbox PUBLIC KEY-----")
+		pemEntry.Wrapping = fyne.TextWrapOff
+		pemEntry.TextStyle = fyne.TextStyle{Monospace: true}
+		pemScroll := container.NewScroll(pemEntry)
+		pemScroll.SetMinSize(fyne.NewSize(480, 160))
+
+		pasteBtn := widget.NewButton("Paste from Clipboard", func() {
+			clip := a.window.Clipboard().Content()
+			if clip == "" {
+				dialog.ShowError(fmt.Errorf("clipboard is empty"), a.window)
+				return
+			}
+			pemEntry.SetText(clip)
+			a.touchActivity()
+			a.statusLabel.SetText("Pasted from clipboard")
 		})
-		loadKeyBtn.Importance = widget.HighImportance
+		pasteBtn.Importance = widget.HighImportance
+
 		items := []*widget.FormItem{
 			{Text: "Name", Widget: nameEntry},
-			{Text: "Load Key", Widget: loadKeyBtn},
+			{Text: "Paste Key", Widget: pasteBtn},
+			{Text: "", Widget: pemScroll},
 		}
 		dialog.ShowForm("Add Peer", "Add", "Cancel", items, func(confirmed bool) {
 			if !confirmed {
@@ -1098,21 +1073,25 @@ func (a *NboxApp) cmdAdd() {
 				dialog.ShowError(fmt.Errorf("invalid name"), a.window)
 				return
 			}
-			if a.scannedPubKey == "" {
-				dialog.ShowError(fmt.Errorf("no public key loaded"), a.window)
+			block, _ := pem.Decode([]byte(pemEntry.Text))
+			if block == nil {
+				dialog.ShowError(fmt.Errorf("no PEM block found in input"), a.window)
+				return
+			}
+			if block.Type != "NaClbox PUBLIC KEY" {
+				dialog.ShowError(fmt.Errorf("unexpected PEM block type: %q", block.Type), a.window)
+				return
+			}
+			if len(block.Bytes) != 32 {
+				dialog.ShowError(fmt.Errorf("invalid public key length: %d", len(block.Bytes)), a.window)
 				return
 			}
 			if a.getEntity(name) != nil {
 				dialog.ShowError(fmt.Errorf("'%s' already exists", name), a.window)
 				return
 			}
-			key, err := hex.DecodeString(a.scannedPubKey)
-			if err != nil || len(key) != 32 {
-				dialog.ShowError(fmt.Errorf("invalid public key"), a.window)
-				return
-			}
 			var pemBuf strings.Builder
-			if err := pem.Encode(&pemBuf, &pem.Block{Type: "NaClbox PUBLIC KEY", Bytes: key}); err != nil {
+			if err := pem.Encode(&pemBuf, &pem.Block{Type: "NaClbox PUBLIC KEY", Bytes: block.Bytes}); err != nil {
 				dialog.ShowError(err, a.window)
 				return
 			}
@@ -1128,18 +1107,35 @@ func (a *NboxApp) cmdAdd() {
 // Import / Export
 func (a *NboxApp) cmdImportIdentity() {
 	a.ensureVaultUnlocked(func() {
-		dialog.ShowFileOpen(func(reader fyne.URIReadCloser, err error) {
-			if reader == nil {
+		pemEntry := widget.NewMultiLineEntry()
+		pemEntry.SetPlaceHolder("Paste the complete identity PEM here\n(both SECRET KEY and PUBLIC KEY blocks)")
+		pemEntry.Wrapping = fyne.TextWrapOff
+		pemEntry.TextStyle = fyne.TextStyle{Monospace: true}
+		pemScroll := container.NewScroll(pemEntry)
+		pemScroll.SetMinSize(fyne.NewSize(480, 200))
+
+		pasteBtn := widget.NewButton("Paste from Clipboard", func() {
+			clip := a.window.Clipboard().Content()
+			if clip == "" {
+				dialog.ShowError(fmt.Errorf("clipboard is empty"), a.window)
 				return
 			}
-			defer reader.Close()
-			data, err := io.ReadAll(reader)
-			if err != nil {
-				dialog.ShowError(err, a.window)
+			pemEntry.SetText(clip)
+			a.touchActivity()
+			a.statusLabel.SetText("Pasted from clipboard")
+		})
+		pasteBtn.Importance = widget.HighImportance
+
+		items := []*widget.FormItem{
+			{Text: "Paste", Widget: pasteBtn},
+			{Text: "", Widget: pemScroll},
+		}
+		dialog.ShowForm("Import Identity", "Import", "Cancel", items, func(confirmed bool) {
+			if !confirmed {
 				return
 			}
 			var sec, pub *[32]byte
-			rest := data
+			rest := []byte(pemEntry.Text)
 			for {
 				block, remainder := pem.Decode(rest)
 				if block == nil {
@@ -1156,7 +1152,7 @@ func (a *NboxApp) cmdImportIdentity() {
 				rest = remainder
 			}
 			if sec == nil || pub == nil {
-				dialog.ShowError(fmt.Errorf("identity file must contain both SECRET and PUBLIC key blocks"), a.window)
+				dialog.ShowError(fmt.Errorf("identity must contain both SECRET and PUBLIC key blocks"), a.window)
 				return
 			}
 			dialog.ShowEntryDialog("Enter name for imported identity", "imported", func(name string) {
@@ -1216,18 +1212,45 @@ func (a *NboxApp) cmdExportIdentity() {
 			} {
 				pem.Encode(&pemBuf, b)
 			}
-			dialog.ShowFileSave(func(writer fyne.URIWriteCloser, err error) {
-				if writer == nil {
-					return
+			pemText := pemBuf.String()
+
+			pemEntry := widget.NewMultiLineEntry()
+			pemEntry.SetText(pemText)
+			pemEntry.Wrapping = fyne.TextWrapOff
+			pemEntry.TextStyle = fyne.TextStyle{Monospace: true}
+			pemScroll := container.NewScroll(pemEntry)
+			pemScroll.SetMinSize(fyne.NewSize(400, 140))
+
+			copyBtn := widget.NewButton("Copy to Clipboard", func() {
+				a.secureCopy(pemText)
+				a.statusLabel.SetText(fmt.Sprintf("Identity '%s' copied (auto-clears in %s)", selected, clipboardClearDelay))
+			})
+			copyBtn.Importance = widget.HighImportance
+			okBtn := widget.NewButton("OK", func() {
+				for _, o := range a.window.Canvas().Overlays().List() {
+					a.window.Canvas().Overlays().Remove(o)
 				}
-				defer writer.Close()
-				if _, err := writer.Write([]byte(pemBuf.String())); err != nil {
-					dialog.ShowError(err, a.window)
-					return
-				}
-				a.touchActivity()
-				a.statusLabel.SetText(fmt.Sprintf("Identity '%s' exported", selected))
-			}, a.window)
+			})
+
+			content := container.NewVBox(
+				widget.NewLabelWithStyle(
+					fmt.Sprintf("Identity '%s' — export PEM", selected),
+					fyne.TextAlignCenter,
+					fyne.TextStyle{Bold: true},
+				),
+				widget.NewSeparator(),
+				pemScroll,
+				container.NewHBox(
+					layout.NewSpacer(),
+					copyBtn,
+					okBtn,
+					layout.NewSpacer(),
+				),
+			)
+			popup := widget.NewModalPopUp(content, a.window.Canvas())
+			popup.Resize(fyne.NewSize(400, 140))
+			popup.Show()
+			a.touchActivity()
 		}, a.window)
 	})
 }
