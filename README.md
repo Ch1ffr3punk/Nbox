@@ -14,7 +14,7 @@ Nbox is designed for users who want strong, misuse-resistant cryptography withou
 - **Single encrypted vault** (`vault.enc`) — no plaintext keys on disk  
 - **memguard** for passphrases and short-lived secrets in RAM  
 - **Auto-lock** after 5 minutes of inactivity (configurable)  
-- **Secure clipboard** — copied text is wiped after 15 seconds (configurable)  
+- **Secure clipboard** — copied text is wiped after 45 seconds (configurable)  
 - **Rate limiting** for decryption attempts (5 per minute)  
 - **Identity import/export** as PEM files  
 - **Optional ISO padding** to 4096-byte blocks (uniform ciphertext size)  
@@ -33,7 +33,7 @@ Nbox is designed for users who want strong, misuse-resistant cryptography withou
 1. Create your identity
 Click Init, enter a name (e.g. self), and confirm. Nbox generates a Curve25519 key pair and stores it inside the encrypted vault. A modal window displays your public key in PEM format — share it with your peers.
 
-You can copy the public key to the clipboard with one click. The clipboard is wiped automatically after 15 seconds.
+You can copy the public key to the clipboard with one click. The clipboard is wiped automatically after 45 seconds.
 
 2. Add a peer
 Click Add, load the peer's public key PEM file, and give the peer a name. The public key is stored inside the vault.
